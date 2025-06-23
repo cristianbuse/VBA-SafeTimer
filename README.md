@@ -1,4 +1,4 @@
-# VBA-SafeTimer
+# VBA-SafeTimer [![Mentioned in Awesome VBA](https://awesome.re/mentioned-badge.svg)](https://github.com/sancarn/awesome-vba)
 Reliable, no-crash timer for VBA. Code can be debugged and stopped safely.
 
 ```Windows``` notes:
