@@ -5,26 +5,23 @@ Option Explicit
 #Const x64 = Win64
 #Const x32 = (x64 = 0)
 
-#If Windows Then
-    #If VBA7 Then
-        Private Declare PtrSafe Sub VariantCopy Lib "oleaut32.dll" (ByRef pvargDest As Variant, ByVal pvargSrc As LongPtr)
-    #Else
-        Private Declare Sub VariantCopy Lib "oleaut32.dll" (ByRef pvargDest As Variant, ByVal pvargSrc As Long)
-    #End If
-#End If
-
 #If VBA7 = 0 Then
     Public Enum LongPtr: [_]: End Enum
+    Private Enum LONG_PTR: [_]: End Enum
 #End If
 
 #If x64 Then
     Private Const NullPtr As LongLong = 0^
-    Private Const ptrSize = 8
+    Private Const PtrSize = 8
 #Else
     Private Const NullPtr As Long = 0&
-    Private Const ptrSize = 4
+    Private Const PtrSize = 4
 #End If
 
+Public Enum SAFEARRAY_FEATURES
+    FADF_AUTO = &H1
+    FADF_FIXEDSIZE = &H10
+End Enum
 Private Type SAFEARRAYBOUND
     cElements As Long
     lLbound As Long
@@ -55,25 +52,21 @@ Private Sub DummyASM(): End Sub 'Custom assembly bytes
 Public Function GetTimerProc(ByVal st As SafeTimer) As LongPtr
     If st Is Nothing Then Exit Function
     Static pa As PointerAccessor
-    Const FADF_AUTO As Long = &H1
-    Const FADF_FIXEDSIZE As Long = &H10
     Dim aPtr As LongPtr
     '
     If pa.sa.cDims = 0 Then
         pa.sa.cDims = 1
         pa.sa.fFeatures = FADF_AUTO Or FADF_FIXEDSIZE
-        pa.sa.cbElements = ptrSize
+        pa.sa.cbElements = PtrSize
         pa.sa.cLocks = 1
-        #If Windows Then
-            MemLongPtrRef(VarPtr(pa)) = VarPtr(pa.sa)
-        #End If
+        MemLongPtr(VarPtr(pa)) = VarPtr(pa.sa)
     End If
     '
     pa.sa.pvData = ObjPtr(st)
     pa.sa.rgsabound0.cElements = 1
     '
 #If x32 Then
-    pa.sa.pvData = pa.arr(0) + ptrSize * 8
+    pa.sa.pvData = pa.arr(0) + PtrSize * 8
     Dim tProcPtr As Long: tProcPtr = pa.arr(0) 'SafeTimer.TimerProc
 #End If
     '
@@ -117,36 +110,21 @@ Public Function GetTimerProc(ByVal st As SafeTimer) As LongPtr
     pa.sa.rgsabound0.cElements = 0
     pa.sa.pvData = NullPtr
 End Function
-
-#If Windows Then
-Private Property Let MemLongPtrRef(ByVal memAddress As LongPtr _
-                                 , ByVal newValue As LongPtr)
-    Const VT_BYREF As Long = &H4000
-    Dim memValue As Variant
-    Dim remoteVT As Variant
-    Dim fv As FakeVariant
-    '
-    fv.ptrs(0) = VarPtr(memValue)
-    fv.vt = vbInteger + VT_BYREF
-    VariantCopy remoteVT, VarPtr(fv) 'Init VarType ByRef
-    '
-#If x64 Then 'Cannot assign LongLong ByRef
-    Dim c As Currency
-    RemoteAssign memValue, VarPtr(newValue), remoteVT, vbCurrency + VT_BYREF, c, memValue
-    RemoteAssign memValue, memAddress, remoteVT, vbCurrency + VT_BYREF, memValue, c
-#Else 'Can assign Long ByRef
-    RemoteAssign memValue, memAddress, remoteVT, vbLong + VT_BYREF, memValue, newValue
-#End If
+Private Property Let MemLongPtr(ByVal addr As LongPtr, ByVal newValue As LongPtr)
+    Dim pa(0 To 0) As PointerAccessor
+    With pa(0)
+        .sa.cDims = 1
+        .sa.cLocks = 1
+        .sa.fFeatures = FADF_AUTO Or FADF_FIXEDSIZE
+        .sa.pvData = addr
+        .sa.rgsabound0.cElements = 1
+        WritePtrNatively pa, VarPtr(.sa)
+        .arr(0) = newValue
+        .sa.rgsabound0.cElements = 0
+        .sa.pvData = NullPtr
+    End With
 End Property
-Private Sub RemoteAssign(ByRef memValue As Variant _
-                       , ByRef memAddress As LongPtr _
-                       , ByRef remoteVT As Variant _
-                       , ByVal newVT As VbVarType _
-                       , ByRef targetVariable As Variant _
-                       , ByRef newValue As Variant)
-    memValue = memAddress
-    remoteVT = newVT
-    targetVariable = newValue
-    remoteVT = vbEmpty
+'https://github.com/WNKLER/RefTypes/discussions/3#discussion-8595790
+Private Sub WritePtrNatively(ByRef ptrs() As LONG_PTR, ByVal ptr As LongPtr)
+    ptrs(0) = ptr
 End Sub
-#End If
