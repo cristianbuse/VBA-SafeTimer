@@ -40,12 +40,6 @@ Private Type PointerAccessor
     sa As SAFEARRAY_1D
 End Type
 
-Private Type FakeVariant
-    vt As Integer
-    wReserved(0 To 2) As Integer
-    ptrs(0 To 1) As LongPtr
-End Type
-
 Private Sub EntryPoint(): End Sub
 Private Sub DummyASM(): End Sub 'Custom assembly bytes
 
