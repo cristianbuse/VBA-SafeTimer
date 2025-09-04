@@ -18,7 +18,7 @@ Option Explicit
     Private Const PtrSize = 4
 #End If
 
-Public Enum SAFEARRAY_FEATURES
+Private Enum SAFEARRAY_FEATURES
     FADF_AUTO = &H1
     FADF_FIXEDSIZE = &H10
 End Enum
