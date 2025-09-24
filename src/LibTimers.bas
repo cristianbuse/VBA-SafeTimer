@@ -79,24 +79,24 @@ Public Function GetTimerProc(ByVal st As SafeTimer) As LongPtr
     If (pa.arr(0) And &HFFFFFF) <> &HC1894C Then
                                   pa.arr(0) = &HC1894C   '4C89C1   MOV RCX,R8              ;nIDEvent (instance)
         pa.sa.pvData = aPtr + 3:  pa.arr(0) = &H18B48    '488B01   MOV RAX,QWORD PTR [RCX] ;vtbl
-        pa.sa.pvData = aPtr + 6:  pa.arr(0) = &H55       '55       PUSH RBP
+        pa.sa.pvData = aPtr + 6:  pa.arr(0) = &H55&      '55       PUSH RBP
         pa.sa.pvData = aPtr + 7:  pa.arr(0) = &HEC8B48   '488BEC   MOV RBP,RSP
         pa.sa.pvData = aPtr + 10: pa.arr(0) = &H20EC8348 '4883EC20 SUB RSP,0x20
         pa.sa.pvData = aPtr + 14: pa.arr(0) = &H4050FF   'FF5040   CALL QWORD PTR [RAX+40] ;SafeTimer.TimerProc
         pa.sa.pvData = aPtr + 17: pa.arr(0) = &H20C48348 '4883C420 ADD RSP,0x20
-        pa.sa.pvData = aPtr + 21: pa.arr(0) = &H5D       '5D       POP RBP
-        pa.sa.pvData = aPtr + 22: pa.arr(0) = &HC3       'C3       RET
+        pa.sa.pvData = aPtr + 21: pa.arr(0) = &H5D&      '5D       POP RBP
+        pa.sa.pvData = aPtr + 22: pa.arr(0) = &HC3&      'C3       RET
     End If
     pa.sa.pvData = GetTimerProc + 55
 #Else
     If pa.arr(0) <> &HC24448B Then
                                   pa.arr(0) = &HC24448B  '8B44240C MOV EAX,DWORD PTR [ESP+0C] ;nIDEvent (instance)
         pa.sa.pvData = aPtr + 4:  pa.arr(0) = &H4244489  '89442404 MOV DWORD PTR [ESP+04],EAX ;replace hWnd
-        pa.sa.pvData = aPtr + 8:  pa.arr(0) = &HB8       'B8       MOV EAX,...
+        pa.sa.pvData = aPtr + 8:  pa.arr(0) = &HB8&      'B8       MOV EAX,...
         pa.sa.pvData = aPtr + 9:  pa.arr(0) = tProcPtr   '                                    ;SafeTimer.TimerProc
-        pa.sa.pvData = aPtr + 13: pa.arr(0) = &HE0FF     'FFE0     JMP EAX
-        pa.sa.pvData = aPtr + 15: pa.arr(0) = &HE0FF     '33C0     XOR EAX,EAX                ;Not needed / never reached
-        pa.sa.pvData = aPtr + 17: pa.arr(0) = &H10C2     'C21000   RET 0010                   ;Not needed / never reached
+        pa.sa.pvData = aPtr + 13: pa.arr(0) = &HE0FF&    'FFE0     JMP EAX
+        pa.sa.pvData = aPtr + 15: pa.arr(0) = &HE0FF&    '33C0     XOR EAX,EAX                ;Not needed / never reached
+        pa.sa.pvData = aPtr + 17: pa.arr(0) = &H10C2&    'C21000   RET 0010                   ;Not needed / never reached
     End If
     pa.sa.pvData = GetTimerProc + 22
 #End If
